@@ -1,13 +1,28 @@
 assert(getscriptbytecode, "Exploit not supported.")
 
-local API: string = "http://api.plusgiant5.com/"
+local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' -- You will need this for encoding/decoding
+-- encoding
+function enc(data)
+    return ((data:gsub('.', function(x) 
+        local r,b='',x:byte()
+        for i=8,1,-1 do r=r..(b%2^i-b%2^(i-1)>0 and '1' or '0') end
+        return r;
+    end)..'0000'):gsub('%d%d%d?%d?%d?%d?', function(x)
+        if (#x < 6) then return '' end
+        local c=0
+        for i=1,6 do c=c+(x:sub(i,i)=='1' and 2^(6-i) or 0) end
+        return b:sub(c+1,c+1)
+    end)..({ '', '==', '=' })[#data%3+1])
+end
+
+local API: string = "https://api.realaya.xyz/v1"
 
 local last_call = 0
-local function call(konstantType: string, scriptPath: Script | ModuleScript | LocalScript): string
+local function call(ayaType: string, scriptPath: Script | ModuleScript | LocalScript): string
     local success: boolean, bytecode: string = pcall(getscriptbytecode, scriptPath)
 
     if (not success) then
-        return -- Failed to get script bytecode, error:\n\n--[[\n{bytecode}\n--]]
+        return `-- Failed to get script bytecode, error:\n\n--[[\n{bytecode}\n--]]`
     end
 
     local time_elapsed = os.clock() - last_call
@@ -15,8 +30,8 @@ local function call(konstantType: string, scriptPath: Script | ModuleScript | Lo
         task.wait(.5 - time_elapsed)
     end
     local httpResult = request({
-        Url = API .. konstantType,
-        Body = bytecode,
+        Url = API .. ayaType,
+        Body = enc(bytecode),
         Method = "POST",
         Headers = {
             ["Content-Type"] = "text/plain"
@@ -25,33 +40,20 @@ local function call(konstantType: string, scriptPath: Script | ModuleScript | Lo
     last_call = os.clock()
 
     if (httpResult.StatusCode ~= 200) then
-        return -- Error occured while requesting the API, error:\n\n--[[\n{httpResult.Body}\n--]]
+        return `-- Error occured while requesting the API, error:\n\n--[[\n{httpResult.Body}\n--]]`
     else
         return httpResult.Body
     end
 end
 
 local function decompile(scriptPath: Script | ModuleScript | LocalScript): string
-    return call("/konstant/decompile", scriptPath)
-end
-
-local function disassemble(scriptPath: Script | ModuleScript | LocalScript): string
-    return call("/konstant/disassemble", scriptPath)
+    return call("/decompile", scriptPath)
 end
 
 getgenv().decompile = decompile
-getgenv().disassemble = disassemble
-local nodes = {}
-local selection
-local cloneref = cloneref or function(...) return ... end
 
 local EmbeddedModules = {
 Explorer = function()
---[[
-	Explorer App Module
-	
-	The main explorer interface
-]]
 
 -- Common Locals
 local Main,Lib,Apps,Settings -- Main Containers
