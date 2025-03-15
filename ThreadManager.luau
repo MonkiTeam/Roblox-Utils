@@ -50,3 +50,5 @@ function ThreadManager:Resume(name)
 		ThreadManager.pausedThreads[name] = nil
 	end
 end
+
+return
