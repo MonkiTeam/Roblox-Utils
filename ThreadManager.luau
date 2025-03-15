@@ -51,4 +51,4 @@ function ThreadManager:Resume(name)
 	end
 end
 
-return
+return ThreadManager
