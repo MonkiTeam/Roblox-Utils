@@ -96,15 +96,19 @@ function ValueRemoteFinder:scanObject(object)
         
         if result.timedOut then
             self:log("  TIMEOUT: Remote did not respond within", self.config.timeoutSeconds, "seconds")
+            remote:SetAttribute("Failed", true)
             table.insert(self.results.timeout, remote)
         elseif not result.success then
             self:log("  ERROR: Remote threw an error")
+            remote:SetAttribute("Failed", true)
             table.insert(self.results.error, remote)
         elseif result.result ~= nil then
             self:log("  VALUE: Remote returns:", tostring(result.result))
+            remote:SetAttribute("Failed", false)
             table.insert(self.results.value, remote)
         else
             self:log("  VOID: Remote returns void/nil")
+            remote:SetAttribute("Failed", true)
             table.insert(self.results.void, remote)
         end
         
