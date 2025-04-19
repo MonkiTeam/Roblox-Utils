@@ -1085,3 +1085,7 @@ test("WebSocket.connect", {}, function()
 	end
 	ws:Close()
 end)
+
+repeat task.wait() until running == 0
+
+return math.round(passes / (passes + fails) * 100)
