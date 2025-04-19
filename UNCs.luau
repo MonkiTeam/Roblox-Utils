@@ -1,3 +1,4 @@
+return function(needDebug)
 local passes, fails, undefined = 0, 0, 0
 local running = 0
 
@@ -18,19 +19,27 @@ local function test(name, aliases, callback)
 
 	task.spawn(function()
 		if not callback then
-			print("⏺️ " .. name)
+			if needDebug then
+				print("⏺️ " .. name)
+			end
 		elseif not getGlobal(name) then
 			fails += 1
-			warn("⛔ " .. name)
+			if needDebug then
+				warn("⛔ " .. name)
+			end
 		else
 			local success, message = pcall(callback)
 
 			if success then
 				passes += 1
-				print("✅ " .. name .. (message and " • " .. message or ""))
+				if needDebug then
+					print("✅ " .. name .. (message and " • " .. message or ""))
+				end
 			else
 				fails += 1
-				warn("⛔ " .. name .. " failed: " .. message)
+				if needDebug then
+					warn("⛔ " .. name .. " failed: " .. message)
+				end
 			end
 		end
 
@@ -44,7 +53,9 @@ local function test(name, aliases, callback)
 
 		if #undefinedAliases > 0 then
 			undefined += 1
-			warn("⚠️ " .. table.concat(undefinedAliases, ", "))
+			if needDebug then
+				warn("⚠️ " .. table.concat(undefinedAliases, ", "))
+			end
 		end
 
 		running -= 1
@@ -65,11 +76,12 @@ task.defer(function()
 	local outOf = passes .. " out of " .. (passes + fails)
 
 	print("\n")
-
-	print("UNC Summary")
-	print("✅ Tested with a " .. rate .. "% success rate (" .. outOf .. ")")
-	print("⛔ " .. fails .. " tests failed")
-	print("⚠️ " .. undefined .. " globals are missing aliases")
+	if needDebug then
+		print("UNC Summary")
+		print("✅ Tested with a " .. rate .. "% success rate (" .. outOf .. ")")
+		print("⛔ " .. fails .. " tests failed")
+		print("⚠️ " .. undefined .. " globals are missing aliases")
+	end
 end)
 
 -- Cache
@@ -1089,3 +1101,5 @@ end)
 repeat task.wait() until running == 0
 
 return math.round(passes / (passes + fails) * 100)
+
+end
