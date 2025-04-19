@@ -63,11 +63,12 @@ local function test(name, aliases, callback)
 end
 
 -- Header and summary
-
-print("\n")
-
-print("UNC Environment Check")
-print("✅ - Pass, ⛔ - Fail, ⏺️ - No test, ⚠️ - Missing aliases\n")
+if needDebug then
+	print("\n")
+	
+	print("UNC Environment Check")
+	print("✅ - Pass, ⛔ - Fail, ⏺️ - No test, ⚠️ - Missing aliases\n")
+end
 
 task.defer(function()
 	repeat task.wait() until running == 0
@@ -399,8 +400,6 @@ test("crypt.base64decode", {"crypt.base64.decode", "crypt.base64_decode", "base6
 	local success = pcall(function()
 		crypt.base64decode("@#$%")
 	end)
-
-	print("Verified multiple decode scenarios" .. (success and "" or " (handles invalid input gracefully)"))
 end)
 
 test("crypt.encrypt", {}, function()
@@ -418,8 +417,6 @@ test("crypt.encrypt", {}, function()
 		local decrypted = crypt.decrypt(encrypted, key, returnedIv or iv, mode)
 		assert(decrypted == testString, "Failed to decrypt properly with mode " .. mode)
 	end
-
-	print("Verified encryption across " .. #modes .. " modes")
 end)
 
 test("crypt.decrypt", {}, function()
@@ -446,8 +443,6 @@ test("crypt.decrypt", {}, function()
 			assert(wrongResult ~= testString, "Decryption with wrong key should not work for mode " .. mode)
 		end
 	end
-
-	print("Verified decryption across " .. #modes .. " modes")
 end)
 
 test("crypt.generatebytes", {}, function()
@@ -475,8 +470,6 @@ test("crypt.generatebytes", {}, function()
 	end
 
 	assert(byteCount > 20, "Random bytes should have good distribution")
-
-	print("Verified randomness across " .. #sizes .. " different sizes")
 end)
 
 test("crypt.generatekey", {}, function()
@@ -491,8 +484,6 @@ test("crypt.generatekey", {}, function()
 
 		keys[i] = key
 	end
-
-	print("Generated unique keys with correct length")
 end)
 
 test("crypt.hash", {}, function()
