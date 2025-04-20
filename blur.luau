@@ -4,7 +4,7 @@ local camera            = workspace.CurrentCamera
 local BLUR_SIZE         = Vector2.new(10, 10)
 local PART_SIZE         = 0.01
 local PART_TRANSPARENCY = 1 - 1e-7
-local START_INTENSITY   = 0.1
+local START_INTENSITY   = 0.4
 
 local BLUR_OBJ          = Instance.new("DepthOfFieldEffect")
 BLUR_OBJ.FarIntensity   = 0
