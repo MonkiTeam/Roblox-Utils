@@ -1,16 +1,13 @@
 local Lighting          = game:GetService("Lighting")
-local camera			= workspace.CurrentCamera
+local camera            = workspace.CurrentCamera
 
 local BLUR_SIZE         = Vector2.new(10, 10)
 local PART_SIZE         = 0.01
 local PART_TRANSPARENCY = 1 - 1e-7
-local START_INTENSITY	= 0.1
-
-script.Parent:SetAttribute("BlurIntensity", START_INTENSITY)
+local START_INTENSITY   = 0.1
 
 local BLUR_OBJ          = Instance.new("DepthOfFieldEffect")
 BLUR_OBJ.FarIntensity   = 0
-BLUR_OBJ.NearIntensity  = script.Parent:GetAttribute("BlurIntensity")
 BLUR_OBJ.FocusDistance  = 0.25
 BLUR_OBJ.InFocusRadius  = 0
 BLUR_OBJ.Parent         = Lighting
@@ -52,6 +49,8 @@ function BlurredGui.new(frame, shape)
 	blurPart.Material     = Enum.Material.Glass
 	blurPart.Transparency = PART_TRANSPARENCY
 	blurPart.Parent       = workspace.CurrentCamera
+	
+	frame:SetAttribute("BlurIntensity", START_INTENSITY)
 
 	local mesh
 	if (shape == "Rectangle") then
@@ -82,12 +81,13 @@ function BlurredGui.new(frame, shape)
 		Part           = blurPart;
 		Mesh           = mesh;
 		IgnoreGuiInset = ignoreInset;
+		ScriptParent   = script.Parent;
 	}, BlurredGui)
 
 	BlurObjects[new] = blurPart
 	rebuildPartsList()
 
-	game:GetService("RunService"):BindToRenderStep("...", Enum.RenderPriority.Camera.Value + 1, function()
+	game:GetService("RunService"):BindToRenderStep("BlurredGuiUpdate", Enum.RenderPriority.Camera.Value + 1, function()
 		blurPart.CFrame = camera.CFrame * CFrame.new(0,0,0)
 		BlurredGui.updateAll()
 	end)
@@ -135,7 +135,14 @@ function updateGui(blurObj)
 end
 
 function BlurredGui.updateAll()
-	BLUR_OBJ.NearIntensity = tonumber(script.Parent:GetAttribute("BlurIntensity"))
+	-- Use the stored parent reference for each blur object
+	for i = 1, #BlursList do
+		local blurObj = BlursList[i]
+		if blurObj.ScriptParent and blurObj.ScriptParent:GetAttribute("BlurIntensity") then
+			BLUR_OBJ.NearIntensity = tonumber(blurObj.ScriptParent:GetAttribute("BlurIntensity"))
+			break
+		end
+	end
 
 	for i = 1, #BlursList do
 		updateGui(BlursList[i])
