@@ -1667,6 +1667,11 @@ function Library:AddDropdown(options)
 		end
 	end
 
+	function dropdown:OnChanged(Func)
+        dropdown.Changed = Func;
+        Func(dropdown.Value);
+    end;
+
 	do
 		local hovered = false
 		local down = false
@@ -1875,6 +1880,7 @@ function Library:AddSlider(options)
 		Callback = function() end
 	}, options)
 
+	local slider = {}
 
 	local sliderContainer = self.container:object("TextButton", {
 		Theme = {BackgroundColor3 = "Secondary"},
@@ -1978,19 +1984,24 @@ function Library:AddSlider(options)
 					Length = 0.06,
 					Size = UDim2.fromScale(percentage, 1)
 				}
+				slider.Value = value
 				options.Callback(value)
 			end
 		end)
 	end
 	self:_resize_tab()
 
-	local methods = {}
-
-	function methods:Set(value)
+	function slider:Set(value)
+		slider.Value = value
 		sliderLine:tween{Size = UDim2.fromScale(((value - options.Min) / (options.Max - options.Min)), 1)}
 	end
 
-	return methods
+	function slider:OnChanged(Func)
+        slider.Changed = Func;
+        Func(slider.Value);
+    end;
+
+	return slider
 end
 
 function Library:AddInput(options)
@@ -1998,9 +2009,12 @@ function Library:AddInput(options)
 		Title = "Text Box",
 		Placeholder = "Type something..",
 		Description = nil,
+		Numberic = false,
+		Finished = false,
 		Callback = function(t) end
 	}, options)
 
+	local input = {}
 	local textboxContainer = self.container:object("TextButton", {
 		Theme = {BackgroundColor3 = "Secondary"},
 		Size = UDim2.new(1, -20, 0, 52)
@@ -2017,7 +2031,7 @@ function Library:AddInput(options)
 	})
 
 	if options.Description then
-		local description = textboxContainer:object("TextLabel", {
+		textboxContainer:object("TextLabel", {
 			BackgroundTransparency = 1,
 			Position = UDim2.fromOffset(10, 27),
 			Size = UDim2.new(0.5, -10, 0, 20),
@@ -2028,17 +2042,17 @@ function Library:AddInput(options)
 		})
 	end
 
-
 	local textBox = textboxContainer:object("TextBox", {
 		AnchorPoint = Vector2.new(1, 0),
 		Theme = {
 			BackgroundColor3 = {"Secondary", -20},
 			TextColor3 = "WeakText"
 		},
-		Position = UDim2.new(1, -50,0, 16),
-		Size = UDim2.new(0, 50,0, 20),
+		Position = UDim2.new(1, -50, 0, 16),
+		Size = UDim2.new(0, 50, 0, 20),
 		TextSize = 12,
 		PlaceholderText = options.Placeholder,
+		ClearTextOnFocus = false,
 		ClipsDescendants = true
 	}):round(5):stroke("Tertiary")
 
@@ -2051,29 +2065,24 @@ function Library:AddInput(options)
 		Theme = {ImageColor3 = "StrongText"}
 	})
 
-
-
 	textBox.Size = UDim2.fromOffset(textBox.TextBounds.X + 20, 20)
 
 	do
-		local hovered = false
-		local down = false
 		local focused = false
 
-		textboxContainer.MouseEnter:connect(function()
+		textboxContainer.MouseEnter:Connect(function()
 			textboxContainer:tween{BackgroundColor3 = self:lighten(Library.CurrentTheme.Secondary, 10)}
 		end)
 
-		textboxContainer.MouseLeave:connect(function()
-			hovered = false
-			if not down then
+		textboxContainer.MouseLeave:Connect(function()
+			if not focused then
 				textboxContainer:tween{BackgroundColor3 = Library.CurrentTheme.Secondary}
 			end
 		end)
 
-		textBox.Focused:connect(function()
+		textBox.Focused:Connect(function()
 			focused = true
-			while focused and RunService.RenderStepped:wait() do
+			while focused and RunService.RenderStepped:Wait() do
 				textBox.AbsoluteObject:TweenSize(
 					UDim2.fromOffset(math.clamp(textBox.TextBounds.X + 20, 0, 0.5 * textboxContainer.AbsoluteSize.X), 20),
 					Enum.EasingDirection.InOut,
@@ -2084,7 +2093,7 @@ function Library:AddInput(options)
 			end
 		end)
 
-		textBox.FocusLost:connect(function()
+		textBox.FocusLost:Connect(function()
 			focused = false
 			textBox.AbsoluteObject:TweenSize(
 				UDim2.fromOffset(math.clamp(textBox.TextBounds.X + 20, 0, 0.5 * textboxContainer.AbsoluteSize.X), 20),
@@ -2093,19 +2102,48 @@ function Library:AddInput(options)
 				0.1,
 				true
 			)
-			options.Callback(textBox.Text)
+			input.Value = textBox.Text
+			if options.Finished then
+				options.Callback(textBox.Text)
+			end
+		end)
+
+		textBox:GetPropertyChangedSignal("Text"):Connect(function()
+			if options.Numberic then
+				local newText = textBox.Text:gsub("[^%d%.%-]", "")
+				if newText ~= textBox.Text then
+					textBox.Text = newText
+					return
+				end
+			end
+
+			textBox.Size = UDim2.fromOffset(math.clamp(textBox.TextBounds.X + 20, 0, 0.5 * textboxContainer.AbsoluteSize.X), 20)
+			input.Value = textBox.Text
+
+			if not options.Finished then
+				options.Callback(textBox.Text)
+			end
+
+			if input.Changed then
+				input.Changed(textBox.Text)
+			end
 		end)
 	end
+
 	self:_resize_tab()
 
-	local methods = {}
-
-	function methods:Set(text)
+	function input:Set(text)
 		textBox.Text = text
 	end
 
-	return methods
+	function input:OnChanged(Func)
+		input.Changed = Func
+		Func(input.Value)
+	end
+
+	return input
 end
+
 
 function Library:AddParagraph(options)
 
@@ -3296,6 +3334,8 @@ function Library:AddKeybind(options)
 		Callback = function() end
 	}, options)
 
+	local keybind = {}
+
 	local keybindContainer = self.container:object("TextButton", {
 		Theme = {BackgroundColor3 = "Secondary"},
 		Size = UDim2.new(1, -20, 0, 52)
@@ -3376,6 +3416,7 @@ function Library:AddKeybind(options)
 					listening = false
 				end
 			else
+				keybind.Value = key.KeyCode
 				if key.KeyCode == options.Keybind then
 					options.Callback()
 				end
@@ -3388,15 +3429,19 @@ function Library:AddKeybind(options)
 	end
 	self:_resize_tab()
 
-	local methods = {}
-
-	function methods:Set(keycode)
+	function keybind:Set(keycode)
+		keybind.Value = keycode
 		options.Keybind = keycode
 		keybindDisplay.Text = (options.Keybind and tostring(options.Keybind.Name):upper()) or "?"
 		keybindDisplay:tween{Size = UDim2.fromOffset(keybindDisplay.TextBounds.X + 20, 20), Length = 0.05}
 	end
 
-	return methods
+	function keybind:OnChanged(Func)
+        keybind.Changed = Func;
+        Func(keybind.Value);
+    end;
+
+	return keybind
 end
 
 function Library:AddPrompt(options)
