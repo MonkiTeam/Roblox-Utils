@@ -924,10 +924,10 @@ function Library:CreateWindow(options)
 	return mt
 end
 
-function Library:notification(options)
+function Library:Notify(options)
 	options = self:set_defaults({
 		Title = "Notification",
-		Text = "Your character has been reset.",
+		Content = "Your character has been reset.",
 		Duration = 3,
 		Callback = function() end
 	}, options)
@@ -1005,7 +1005,7 @@ function Library:notification(options)
 
 	local text = noti:object("TextLabel", {
 		BackgroundTransparency = 1,
-		Text = options.Text,
+		Text = options.Content,
 		Position = UDim2.new(0, 0,0, 23),
 		Size = UDim2.new(1, 0, 100, 0),
 		TextSize = 16,
