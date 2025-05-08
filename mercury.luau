@@ -1291,129 +1291,132 @@ function Library:AddToggle(options)
 		Title = "Toggle",
 		StartingState = false,
 		Description = nil,
-        Default = false,
+		Default = false,
 		Callback = function(state) end
 	}, options)
 
-	local toggleContainer = self.container:object("TextButton", {
+	local toggle = {}
+	toggle.Value = options.Default
+
+	local container = self.container:object("TextButton", {
 		Theme = {BackgroundColor3 = "Secondary"},
-		Size = UDim2.new(1, -20, 0, 52)
+		Size = UDim2.new(1, -20, 0, 52),
+		AutoButtonColor = false
 	}):round(7)
 
-	local on = "http://www.roblox.com/asset/?id=8498709213"
-	local off = "http://www.roblox.com/asset/?id=8498691125"
-
-	local toggled = options.StartingState
-
-	local onIcon = toggleContainer:object("ImageLabel", {
-		AnchorPoint = Vector2.new(1, .5),
+	local iconOn = container:object("ImageLabel", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -11, 0.5, 0),
+		Size = UDim2.new(0, 26, 0, 26),
 		BackgroundTransparency = 1,
-		Position = UDim2.new(1, -11,0.5, 0),
-		Size = UDim2.new(0, 26,0, 26),
-		Image = on,
+		Image = "http://www.roblox.com/asset/?id=8498709213",
 		Theme = {ImageColor3 = "Tertiary"},
-		ImageTransparency = (toggled and 0) or 1
+		ImageTransparency = toggle.Value and 0 or 1
 	})
 
-	local offIcon = toggleContainer:object("ImageLabel", {
-		AnchorPoint = Vector2.new(1, .5),
+	local iconOff = container:object("ImageLabel", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -11, 0.5, 0),
+		Size = UDim2.new(0, 26, 0, 26),
 		BackgroundTransparency = 1,
-		Position = UDim2.new(1, -11,0.5, 0),
-		Size = UDim2.new(0, 26,0, 26),
-		Image = off,
+		Image = "http://www.roblox.com/asset/?id=8498691125",
 		Theme = {ImageColor3 = "WeakText"},
-		ImageTransparency = (toggled and 1) or 0
+		ImageTransparency = toggle.Value and 1 or 0
 	})
 
-	local text = toggleContainer:object("TextLabel", {
+	container:object("TextLabel", {
 		BackgroundTransparency = 1,
 		Position = UDim2.fromOffset(10, (options.Description and 5) or 0),
 		Size = (options.Description and UDim2.new(0.5, -10, 0, 22)) or UDim2.new(0.5, -10, 1, 0),
 		Text = options.Title,
 		TextSize = 22,
-		Theme = {TextColor3 = "StrongText"},
-		TextXAlignment = Enum.TextXAlignment.Left
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Theme = {TextColor3 = "StrongText"}
 	})
 
 	if options.Description then
-		local description = toggleContainer:object("TextLabel", {
+		container:object("TextLabel", {
 			BackgroundTransparency = 1,
 			Position = UDim2.fromOffset(10, 27),
 			Size = UDim2.new(0.5, -10, 0, 20),
 			Text = options.Description,
 			TextSize = 18,
-			Theme = {TextColor3 = "WeakText"},
-			TextXAlignment = Enum.TextXAlignment.Left
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Theme = {TextColor3 = "WeakText"}
 		})
 	end
 
-	local function toggle()
-		toggled = not toggled
-		if toggled then
-			offIcon:crossfade(onIcon, 0.1)
+	local function updateVisual(state)
+		if state then
+			iconOff:crossfade(iconOn, 0.1)
 		else
-			onIcon:crossfade(offIcon, 0.1)
+			iconOn:crossfade(iconOff, 0.1)
 		end
-		options.Callback(toggled)
+	end
+
+	local function setToggle(state, fireCallback)
+		toggle.Value = state
+		updateVisual(state)
+		if fireCallback then
+			options.Callback(state)
+			if toggle.Changed then
+				toggle.Changed(state)
+			end
+		end
+	end
+
+	local function toggleAction()
+		setToggle(not toggle.Value, true)
 	end
 
 	do
-		local hovered = false
-		local down = false
+		local hovered, down = false, false
 
-		toggleContainer.MouseEnter:connect(function()
+		container.MouseEnter:Connect(function()
 			hovered = true
-			toggleContainer:tween{BackgroundColor3 = self:lighten(Library.CurrentTheme.Secondary, 10)}
+			container:tween{BackgroundColor3 = self:lighten(Library.CurrentTheme.Secondary, 10)}
 		end)
 
-		toggleContainer.MouseLeave:connect(function()
+		container.MouseLeave:Connect(function()
 			hovered = false
 			if not down then
-				toggleContainer:tween{BackgroundColor3 = Library.CurrentTheme.Secondary}
+				container:tween{BackgroundColor3 = Library.CurrentTheme.Secondary}
 			end
 		end)
 
-		toggleContainer.MouseButton1Down:connect(function()
-			toggleContainer:tween{BackgroundColor3 = self:lighten(Library.CurrentTheme.Secondary, 20)}
+		container.MouseButton1Down:Connect(function()
+			down = true
+			container:tween{BackgroundColor3 = self:lighten(Library.CurrentTheme.Secondary, 20)}
 		end)
 
-		UserInputService.InputEnded:connect(function(key)
-			if key.UserInputType == Enum.UserInputType.MouseButton1 then
-				toggleContainer:tween{BackgroundColor3 = (hovered and self:lighten(Library.CurrentTheme.Secondary)) or Library.CurrentTheme.Secondary}
+		UserInputService.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				down = false
+				container:tween{BackgroundColor3 = hovered and self:lighten(Library.CurrentTheme.Secondary, 10) or Library.CurrentTheme.Secondary}
 			end
 		end)
 
-		toggleContainer.MouseButton1Click:connect(function()
-			toggle()
-		end)
+		container.MouseButton1Click:Connect(toggleAction)
 	end
 
 	self:_resize_tab()
 
-	local toggle = {
-        Value = false;
-    }
-
+	-- Public API
 	function toggle:Toggle()
-		toggle()
+		toggleAction()
 	end
 
 	function toggle:SetValue(state)
-		toggled = state
-		if toggled then
-			offIcon:crossfade(onIcon, 0.1)
-		else
-			onIcon:crossfade(offIcon, 0.1)
-		end
-		task.spawn(function() options.Callback(toggled) end)
+		setToggle(state, true)
 	end
 
-    function toggle:OnChanged(Func)
-        toggle.Changed = Func;
-        Func(toggle.Value);
-    end;
+	function toggle:OnChanged(callback)
+		toggle.Changed = callback
+		callback(toggle.Value)
+	end
 
-    toggle:SetValue(options.Default)
+	-- Apply default state
+	setToggle(options.Default, false)
 
 	return toggle
 end
@@ -3337,7 +3340,9 @@ function Library:AddKeybind(options)
 		Callback = function() end
 	}, options)
 
-	local keybind = {}
+	local keybind = {
+		Click = function() end
+	}
 
 	local keybindContainer = self.container:object("TextButton", {
 		Theme = {BackgroundColor3 = "Secondary"},
