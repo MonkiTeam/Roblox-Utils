@@ -2148,7 +2148,6 @@ function Library:AddInput(options)
 	return input
 end
 
-
 function Library:AddParagraph(options)
 
 	options = self:set_defaults({
@@ -3409,6 +3408,17 @@ function Library:AddKeybind(options)
 			end
 		end)
 
+		keybindContainer.MouseButton1Click:Connect(function()
+			if not listening then
+				listening = true
+				keybindDisplay.Text = "..."
+			end
+		
+			if keybind.Click then
+				keybind.Click()
+			end
+		end)
+		
 		UserInputService.InputBegan:Connect(function(key, gameProcessed)
 			if listening and not UserInputService:GetFocusedTextBox() then
 				if key.UserInputType == Enum.UserInputType.Keyboard then
@@ -3444,6 +3454,10 @@ function Library:AddKeybind(options)
         keybind.Changed = Func;
         Func(keybind.Value);
     end;
+
+	function keybind:OnClick(func)
+		keybind.Click = func
+	end
 
 	return keybind
 end
