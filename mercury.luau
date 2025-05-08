@@ -315,6 +315,10 @@ function Library:object(class, properties)
 		return methods
 	end
 
+	function methods:GetPropertyChangedSignal(...)
+		return localObject:GetPropertyChangedSignal(...)
+	end
+
 	local customHandlers = {
 		Centered = function(value)
 			if value then
